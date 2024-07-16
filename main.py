@@ -139,7 +139,7 @@ class StoreApp:
         self.items_listbox.delete(0, tk.END)
         store = self.stores[store_index]
         for item_name, item_price in store.items.items():
-            self.items_listbox.insert(tk.END, f"{item_name}: ${item_price:.2f}")
+            self.items_listbox.insert(tk.END, f"{item_name}: {item_price:.2f} Руб.")
 
     def remove_item(self):
         if self.selected_store_index is None:
