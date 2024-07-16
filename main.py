@@ -24,53 +24,59 @@ class Store:
 class StoreApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Store Management")
+        self.root.title("Менеджер магазинов")
         self.root.configure(bg="light gray")
 
         self.stores = []
+        self.selected_store_index = None
 
-        self.store_name_label = tk.Label(root, text="Store Name:", bg="light gray")
+        self.store_name_label = tk.Label(root, text="Название магазина:", bg="light gray")
         self.store_name_label.grid(row=0, column=0)
         self.store_name_entry = tk.Entry(root)
         self.store_name_entry.grid(row=0, column=1)
 
-        self.store_address_label = tk.Label(root, text="Store Address:", bg="light gray")
+        self.store_address_label = tk.Label(root, text="Адрес магазина:", bg="light gray")
         self.store_address_label.grid(row=1, column=0)
         self.store_address_entry = tk.Entry(root)
         self.store_address_entry.grid(row=1, column=1)
 
-        self.add_store_button = tk.Button(root,  text="Add Store", command=self.add_store)
+        self.add_store_button = tk.Button(root, text="Добавить магазин", command=self.add_store)
         self.add_store_button.grid(row=2, column=0, columnspan=2)
 
+        self.remove_store_button = tk.Button(root, text="Удалить магазин", bg="light pink", command=self.remove_store)
+        self.remove_store_button.grid(row=3, column=0, columnspan=2)
+
         self.stores_listbox = tk.Listbox(root, width=50, height=10)
-        self.stores_listbox.grid(row=3, column=0, columnspan=2)
+        self.stores_listbox.grid(row=4, column=0, columnspan=2)
+        self.stores_listbox.bind("<<ListboxSelect>>", self.show_store_items)
 
-        self.item_name_label = tk.Label(root, text="Item Name:", bg="light gray")
-        self.item_name_label.grid(row=4, column=0)
+        self.item_name_label = tk.Label(root, text="Наименование товара:", bg="light gray")
+        self.item_name_label.grid(row=5, column=0)
         self.item_name_entry = tk.Entry(root)
-        self.item_name_entry.grid(row=4, column=1)
+        self.item_name_entry.grid(row=5, column=1)
 
-        self.item_price_label = tk.Label(root, text="Item Price:", bg="light gray")
-        self.item_price_label.grid(row=5, column=0)
+        self.item_price_label = tk.Label(root, text="Цена товара:", bg="light gray")
+        self.item_price_label.grid(row=6, column=0)
         self.item_price_entry = tk.Entry(root)
-        self.item_price_entry.grid(row=5, column=1)
+        self.item_price_entry.grid(row=6, column=1)
 
-        self.add_item_button = tk.Button(root, text="Add Item", command=self.add_item)
-        self.add_item_button.grid(row=6, column=0, columnspan=2)
+        self.add_item_button = tk.Button(root, text="Добавить товар", command=self.add_item)
+        self.add_item_button.grid(row=7, column=0, columnspan=2)
 
         self.items_listbox = tk.Listbox(root, width=50, height=10)
-        self.items_listbox.grid(row=7, column=0, columnspan=2)
+        self.items_listbox.grid(row=8, column=0, columnspan=2)
+        self.items_listbox.bind("<<ListboxSelect>>", self.on_item_select)
 
-        self.remove_item_button = tk.Button(root, text="Remove Item", command=self.remove_item)
-        self.remove_item_button.grid(row=8, column=0, columnspan=2)
+        self.remove_item_button = tk.Button(root, text="Удалить товар", bg="light pink", command=self.remove_item)
+        self.remove_item_button.grid(row=9, column=0, columnspan=2)
 
-        self.update_price_label = tk.Label(root, text="New Price:", bg="light gray")
-        self.update_price_label.grid(row=9, column=0)
+        self.update_price_label = tk.Label(root, text="Новая цена:", bg="light gray")
+        self.update_price_label.grid(row=10, column=0)
         self.update_price_entry = tk.Entry(root)
-        self.update_price_entry.grid(row=9, column=1)
+        self.update_price_entry.grid(row=10, column=1)
 
-        self.update_price_button = tk.Button(root, text="Update Price", command=self.update_price)
-        self.update_price_button.grid(row=10, column=0, columnspan=2)
+        self.update_price_button = tk.Button(root, text="Обновить цену", command=self.update_price)
+        self.update_price_button.grid(row=11, column=0, columnspan=2)
 
     def add_store(self):
         name = self.store_name_entry.get()
@@ -80,33 +86,54 @@ class StoreApp:
             self.stores.append(store)
             self.refresh_stores()
         else:
-            messagebox.showerror("Error", "Please enter both name and address")
+            messagebox.showerror("Error", "Пожалуйста, введите название и адрес")
+
+    def remove_store(self):
+        selected_index = self.stores_listbox.curselection()
+        if not selected_index:
+            messagebox.showerror("Error", "Магазин не выбран")
+            return
+
+        store_index = selected_index[0]
+        del self.stores[store_index]
+        self.refresh_stores()
+        self.selected_store_index = None
+        self.items_listbox.delete(0, tk.END)
 
     def refresh_stores(self):
         self.stores_listbox.delete(0, tk.END)
         for store in self.stores:
             self.stores_listbox.insert(tk.END, f"{store.name} - {store.address}")
-        self.items_listbox.delete(0, tk.END)
 
-    def add_item(self):
+    def show_store_items(self, event):
         selected_index = self.stores_listbox.curselection()
         if not selected_index:
-            messagebox.showerror("Error", "No store selected")
+            return
+        self.selected_store_index = selected_index[0]
+        self.refresh_items(self.selected_store_index)
+
+    def on_item_select(self, event):
+        selected_index = self.items_listbox.curselection()
+        if not selected_index:
+            return
+
+    def add_item(self):
+        if self.selected_store_index is None:
+            messagebox.showerror("Error", "Магазин не выбран")
             return
 
         item_name = self.item_name_entry.get()
         try:
             item_price = float(self.item_price_entry.get())
         except ValueError:
-            messagebox.showerror("Error", "Invalid price")
+            messagebox.showerror("Error", "Неправильная цена")
             return
 
         if item_name and item_price >= 0:
-            store_index = selected_index[0]
-            self.stores[store_index].add_item(item_name, item_price)
-            self.refresh_items(store_index)
+            self.stores[self.selected_store_index].add_item(item_name, item_price)
+            self.refresh_items(self.selected_store_index)
         else:
-            messagebox.showerror("Error", "Please enter both item name and a valid price")
+            messagebox.showerror("Error", "Пожалуйста, введите товар и цену")
 
     def refresh_items(self, store_index):
         self.items_listbox.delete(0, tk.END)
@@ -115,40 +142,44 @@ class StoreApp:
             self.items_listbox.insert(tk.END, f"{item_name}: ${item_price:.2f}")
 
     def remove_item(self):
-        selected_store_index = self.stores_listbox.curselection()
-        selected_item_index = self.items_listbox.curselection()
-        if not selected_store_index or not selected_item_index:
-            messagebox.showerror("Error", "No store or item selected")
+        if self.selected_store_index is None:
+            messagebox.showerror("Error", "Магазин не выбран")
             return
 
-        store_index = selected_store_index[0]
+        selected_item_index = self.items_listbox.curselection()
+        if not selected_item_index:
+            messagebox.showerror("Error", "Товар не выбран")
+            return
+
         item_index = selected_item_index[0]
-        item_name = list(self.stores[store_index].items.keys())[item_index]
-        self.stores[store_index].remove_item(item_name)
-        self.refresh_items(store_index)
+        item_name = list(self.stores[self.selected_store_index].items.keys())[item_index]
+        self.stores[self.selected_store_index].remove_item(item_name)
+        self.refresh_items(self.selected_store_index)
 
     def update_price(self):
-        selected_store_index = self.stores_listbox.curselection()
+        if self.selected_store_index is None:
+            messagebox.showerror("Error", "Магазин не выбран")
+            return
+
         selected_item_index = self.items_listbox.curselection()
-        if not selected_store_index or not selected_item_index:
-            messagebox.showerror("Error", "No store or item selected")
+        if not selected_item_index:
+            messagebox.showerror("Error", "Товар не выбран")
             return
 
         try:
             new_price = float(self.update_price_entry.get())
         except ValueError:
-            messagebox.showerror("Error", "Invalid price")
+            messagebox.showerror("Error", "Неправильная цена")
             return
 
         if new_price < 0:
-            messagebox.showerror("Error", "Price cannot be negative")
+            messagebox.showerror("Error", "Цена не может быть отрицательной")
             return
 
-        store_index = selected_store_index[0]
         item_index = selected_item_index[0]
-        item_name = list(self.stores[store_index].items.keys())[item_index]
-        self.stores[store_index].update_price(item_name, new_price)
-        self.refresh_items(store_index)
+        item_name = list(self.stores[self.selected_store_index].items.keys())[item_index]
+        self.stores[self.selected_store_index].update_price(item_name, new_price)
+        self.refresh_items(self.selected_store_index)
 
 if __name__ == "__main__":
     root = tk.Tk()
